@@ -113,7 +113,7 @@ async def join(ctx):
 
 @bot.command()
 async def take(ctx):
-    for game in games.values():
+    for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             if ctx.author != game.current_turn:
                 await ctx.send("It's not your turn!")
@@ -130,6 +130,7 @@ async def take(ctx):
                 msg = await apply_victory_reward(winner)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+                del games[starter_id]  # remove game completely
                 return
             else:
                 await show_status(ctx, game)
@@ -139,7 +140,7 @@ async def take(ctx):
 
 @bot.command()
 async def give(ctx):
-    for game in games.values():
+    for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             if ctx.author != game.current_turn:
                 await ctx.send("It's not your turn!")
@@ -157,6 +158,7 @@ async def give(ctx):
                 msg = await apply_victory_reward(winner)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+                del games[starter_id]  # remove game completely
                 return
             else:
                 await show_status(ctx, game)
@@ -169,7 +171,7 @@ async def end(ctx):
     for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             game.active = False
-            del games[starter_id]
+            del games[starter_id]  # remove game completely
             await ctx.send(f"🛑 {ctx.author.mention} has ended the game early.")
             return
     await ctx.send("You're not in an active game to end.")

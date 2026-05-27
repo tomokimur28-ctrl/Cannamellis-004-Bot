@@ -5,9 +5,9 @@ import os
 
 # --- Intents ---
 intents = discord.Intents.default()
-intents.message_content = True   # Needed if your bot reads messages
+intents.message_content = True
 intents.guilds = True
-intents.members = True           # Needed if your bot uses member info
+intents.members = True
 
 # --- Bot setup ---
 bot = commands.Bot(command_prefix="/", intents=intents)
@@ -58,7 +58,6 @@ async def apply_victory_reward(winner: discord.Member):
     guild = winner.guild
     numeric_role = None
 
-    # Look for an existing numeric role
     for role in winner.roles:
         if role.name.isdigit():
             numeric_role = role
@@ -69,22 +68,25 @@ async def apply_victory_reward(winner: discord.Member):
     else:
         new_value = 500
 
-    # Check if the new role already exists
     new_role = discord.utils.get(guild.roles, name=str(new_value))
     if not new_role:
         new_role = await guild.create_role(name=str(new_value))
 
-    # Remove old numeric role if it exists
     if numeric_role:
         await winner.remove_roles(numeric_role)
 
-    # Add the new role
     await winner.add_roles(new_role)
 
     if numeric_role:
         return f"{winner.mention} has been promoted from '{numeric_role.name}' to '{new_role.name}'!"
     else:
         return f"{winner.mention} wins and receives their first numeric role: '{new_role.name}'!"
+
+
+# --- Helper: show status after each turn ---
+async def show_status(ctx, game):
+    lives_status = " | ".join([f"{p.mention}: {game.lives[p]} lives" for p in game.players])
+    await ctx.send(f"🔢 Current numbers: {game.visual_display}\n❤️ Lives: {lives_status}\n👉 Next turn: {game.current_turn.mention}")
 
 
 # --- Commands ---
@@ -119,15 +121,17 @@ async def take(ctx):
             number = game.reveal_number()
             if number == 1:
                 game.lives[ctx.author] -= 1
-                await ctx.send(f"{ctx.author.mention} revealed a **1** and lost 1 life! Lives: {game.lives}")
+                await ctx.send(f"{ctx.author.mention} revealed a **1** and lost 1 life!")
                 game.switch_turn(ctx.author)
             else:
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
             if game.is_over():
                 winner = game.winner()
                 msg = await apply_victory_reward(winner)
-                await ctx.send(f"Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
+                await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+            else:
+                await show_status(ctx, game)  # NEW: show numbers + lives
             return
     await ctx.send("You're not in an active game.")
 
@@ -143,15 +147,17 @@ async def give(ctx):
             number = game.reveal_number()
             if number == 1:
                 game.lives[opponent] -= 1
-                await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}! Lives: {game.lives}")
+                await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
             else:
                 await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
             game.switch_turn(ctx.author)
             if game.is_over():
                 winner = game.winner()
                 msg = await apply_victory_reward(winner)
-                await ctx.send(f"Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
+                await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+            else:
+                await show_status(ctx, game)  # NEW: show numbers + lives
             return
     await ctx.send("You're not in an active game.")
 

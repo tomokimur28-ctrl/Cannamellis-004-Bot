@@ -1,14 +1,18 @@
 import discord
 from discord.ext import commands
 import random
+import os
 
+# --- Intents ---
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True   # Needed if your bot reads messages
 intents.guilds = True
-intents.members = True
+intents.members = True           # Needed if your bot uses member info
 
+# --- Bot setup ---
 bot = commands.Bot(command_prefix="/", intents=intents)
 
+# --- Game logic ---
 games = {}
 
 class Game:
@@ -63,7 +67,6 @@ async def apply_victory_reward(winner: discord.Member):
     if numeric_role:
         new_value = int(numeric_role.name) + 500
     else:
-        # Fallback: assign "500" if no numeric role exists
         new_value = 500
 
     # Check if the new role already exists
@@ -84,6 +87,7 @@ async def apply_victory_reward(winner: discord.Member):
         return f"{winner.mention} wins and receives their first numeric role: '{new_role.name}'!"
 
 
+# --- Commands ---
 @bot.command()
 async def start(ctx):
     if ctx.author.id in games:
@@ -152,5 +156,5 @@ async def give(ctx):
     await ctx.send("You're not in an active game.")
 
 
-import os
+# --- Run the bot ---
 bot.run(os.getenv("BOT_TOKEN"))

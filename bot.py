@@ -125,11 +125,12 @@ async def take(ctx):
                 game.switch_turn(ctx.author)
             else:
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
-            if game.is_over():
+            if game.is_over():  # AUTO END when someone dies
                 winner = game.winner()
                 msg = await apply_victory_reward(winner)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+                return
             else:
                 await show_status(ctx, game)
             return
@@ -151,11 +152,12 @@ async def give(ctx):
             else:
                 await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
             game.switch_turn(ctx.author)
-            if game.is_over():
+            if game.is_over():  # AUTO END when someone dies
                 winner = game.winner()
                 msg = await apply_victory_reward(winner)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
+                return
             else:
                 await show_status(ctx, game)
             return

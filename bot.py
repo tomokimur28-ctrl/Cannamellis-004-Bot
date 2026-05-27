@@ -33,8 +33,11 @@ class Game:
         return False
 
     def generate_numbers(self):
+        # Actual random order for gameplay
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        self.visual_display = "(= " + " = ".join(str(n) for n in self.hidden_numbers) + " =)"
+        # Visual display sorted: all 1s first, then 2s
+        sorted_visual = sorted(self.hidden_numbers)
+        self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
         if not self.hidden_numbers:
@@ -54,17 +57,18 @@ class Game:
         return None
 
 
-async def apply_victory_reward(winner: discord.Member):
+async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
     guild = winner.guild
-    numeric_role = None
 
+    # --- Winner role adjustment (+500) ---
+    winner_numeric_role = None
     for role in winner.roles:
         if role.name.isdigit():
-            numeric_role = role
+            winner_numeric_role = role
             break
 
-    if numeric_role:
-        new_value = int(numeric_role.name) + 500
+    if winner_numeric_role:
+        new_value = int(winner_numeric_role.name) + 500
     else:
         new_value = 500
 
@@ -72,15 +76,32 @@ async def apply_victory_reward(winner: discord.Member):
     if not new_role:
         new_role = await guild.create_role(name=str(new_value))
 
-    if numeric_role:
-        await winner.remove_roles(numeric_role)
-
+    if winner_numeric_role:
+        await winner.remove_roles(winner_numeric_role)
     await winner.add_roles(new_role)
 
-    if numeric_role:
-        return f"{winner.mention} has been promoted from '{numeric_role.name}' to '{new_role.name}'!"
+    # --- Loser role adjustment (−250) ---
+    loser_numeric_role = None
+    for role in loser.roles:
+        if role.name.isdigit():
+            loser_numeric_role = role
+            break
+
+    if loser_numeric_role:
+        new_value = max(0, int(loser_numeric_role.name) - 250)  # prevent negative
     else:
-        return f"{winner.mention} wins and receives their first numeric role: '{new_role.name}'!"
+        new_value = 0  # if no role, loser drops to 0
+
+    loser_role = discord.utils.get(guild.roles, name=str(new_value))
+    if not loser_role:
+        loser_role = await guild.create_role(name=str(new_value))
+
+    if loser_numeric_role:
+        await loser.remove_roles(loser_numeric_role)
+    await loser.add_roles(loser_role)
+
+    return (f"{winner.mention} has been promoted to '{new_role.name}' (+500 points)! "
+            f"{loser.mention} has been demoted to '{loser_role.name}' (−250 points).")
 
 
 # --- Helper: show status after each turn ---
@@ -125,12 +146,13 @@ async def take(ctx):
                 game.switch_turn(ctx.author)
             else:
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
-            if game.is_over():  # AUTO END when someone dies
+            if game.is_over():
                 winner = game.winner()
-                msg = await apply_victory_reward(winner)
-                await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
+                loser = game.players[0] if winner == game.players[1] else game.players[1]
+                msg = await apply_victory_reward(winner, loser)
+                await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
                 game.active = False
-                del games[starter_id]  # remove game completely
+                del games[starter_id]
                 return
             else:
                 await show_status(ctx, game)
@@ -153,12 +175,13 @@ async def give(ctx):
             else:
                 await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
             game.switch_turn(ctx.author)
-            if game.is_over():  # AUTO END when someone dies
+            if game.is_over():
                 winner = game.winner()
-                msg = await apply_victory_reward(winner)
-                await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
+                loser = game.players[0] if winner == game.players[1] else game.players[1]
+                msg = await apply_victory_reward(winner, loser)
+                await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
                 game.active = False
-                del games[starter_id]  # remove game completely
+                del games[starter_id]
                 return
             else:
                 await show_status(ctx, game)
@@ -171,7 +194,7 @@ async def end(ctx):
     for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             game.active = False
-            del games[starter_id]  # remove game completely
+            del games[starter_id]
             await ctx.send(f"🛑 {ctx.author.mention} has ended the game early.")
             return
     await ctx.send("You're not in an active game to end.")

@@ -131,7 +131,7 @@ async def take(ctx):
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
             else:
-                await show_status(ctx, game)  # NEW: show numbers + lives
+                await show_status(ctx, game)
             return
     await ctx.send("You're not in an active game.")
 
@@ -157,9 +157,20 @@ async def give(ctx):
                 await ctx.send(f"🏆 Game over! {winner.mention} wins with {game.lives[winner]} lives left!\n{msg}")
                 game.active = False
             else:
-                await show_status(ctx, game)  # NEW: show numbers + lives
+                await show_status(ctx, game)
             return
     await ctx.send("You're not in an active game.")
+
+
+@bot.command()
+async def end(ctx):
+    for starter_id, game in list(games.items()):
+        if ctx.author in game.players and game.active:
+            game.active = False
+            del games[starter_id]
+            await ctx.send(f"🛑 {ctx.author.mention} has ended the game early.")
+            return
+    await ctx.send("You're not in an active game to end.")
 
 
 # --- Run the bot ---

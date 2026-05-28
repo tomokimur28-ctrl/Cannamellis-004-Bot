@@ -38,8 +38,8 @@ class Game:
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
         # Generate next gameplay set
         self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Visuals show the NEXT set (sorted)
-        sorted_visual = sorted(self.next_hidden_numbers)
+        # Visuals show the current set initially
+        sorted_visual = sorted(self.hidden_numbers)
         self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
@@ -52,6 +52,10 @@ class Game:
         # When only 1 number remains, prepare visuals for the next set early
         if len(self.hidden_numbers) == 1:
             sorted_visual = sorted(self.next_hidden_numbers)
+            self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
+        else:
+            # Otherwise visuals match the current set
+            sorted_visual = sorted(self.hidden_numbers)
             self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
         return number
 
@@ -163,7 +167,7 @@ async def take(ctx):
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
             if game.is_over():
                 winner = game.winner()
-                loser = game.players[0] if winner == game.players[1] else game.players[0]
+                loser = game.players[0] if winner == game.players[1] else game.players[1]
                 msg = await apply_victory_reward(winner, loser)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
                 game.active = False
@@ -192,7 +196,7 @@ async def give(ctx):
             game.switch_turn(ctx.author)
             if game.is_over():
                 winner = game.winner()
-                loser = game.players[0] if winner == game.players[1] else game.players[0]
+                loser = game.players[0] if winner == game.players[1] else game.players[1]
                 msg = await apply_victory_reward(winner, loser)
                 await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
                 game.active = False

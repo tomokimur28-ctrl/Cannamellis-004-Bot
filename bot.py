@@ -21,8 +21,9 @@ class Game:
         self.lives = {starter: 5}
         self.current_turn = starter
         self.hidden_numbers = []
-        self.active = True
+        self.visual_display = ""
         self.generate_numbers()
+        self.active = True
 
     def add_player(self, player):
         if len(self.players) < 2:
@@ -34,10 +35,19 @@ class Game:
     def generate_numbers(self):
         # Actual random order for gameplay
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
+        # Visual display sorted but with the SAME count of numbers
+        sorted_visual = sorted(self.hidden_numbers)
+        self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
+        # If only one number remains, play it and regenerate immediately
+        if len(self.hidden_numbers) == 1:
+            number = self.hidden_numbers.pop(0)
+            self.generate_numbers()  # silently prepare next set
+            return number
+
+        # Normal case
         if not self.hidden_numbers:
-            # silently regenerate when empty
             self.generate_numbers()
         return self.hidden_numbers.pop(0)
 
@@ -129,10 +139,8 @@ async def join(ctx):
     for starter_id, game in games.items():
         if len(game.players) == 1 and ctx.author not in game.players:
             game.add_player(ctx.author)
-            sorted_visual = sorted(game.hidden_numbers)
-            visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
             await ctx.send(f"{ctx.author.mention} joined {game.players[0].mention}'s game!\n"
-                           f"Visual numbers: {visual_display}\n"
+                           f"Visual numbers: {game.visual_display}\n"
                            f"{game.current_turn.mention} goes first.")
             return
     await ctx.send("No available games to join.")

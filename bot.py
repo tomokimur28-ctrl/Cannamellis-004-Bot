@@ -38,8 +38,8 @@ class Game:
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
         # Generate next gameplay set
         self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Visuals show the current set initially
-        sorted_visual = sorted(self.hidden_numbers)
+        # Visuals show NEXT set (sorted)
+        sorted_visual = sorted(self.next_hidden_numbers)
         self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
@@ -49,13 +49,9 @@ class Game:
             # Generate a new next set
             self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
         number = self.hidden_numbers.pop(0)
-        # When only 1 number remains, prepare visuals for the next set early
+        # When only 1 number remains, update visuals to show the next set early
         if len(self.hidden_numbers) == 1:
             sorted_visual = sorted(self.next_hidden_numbers)
-            self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
-        else:
-            # Otherwise visuals match the current set
-            sorted_visual = sorted(self.hidden_numbers)
             self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
         return number
 

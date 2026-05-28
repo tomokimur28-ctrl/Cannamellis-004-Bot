@@ -21,8 +21,7 @@ class Game:
         self.lives = {starter: 5}
         self.current_turn = starter
         self.hidden_numbers = []
-        self.visual_display = ""       # current visuals
-        self.next_visual_display = ""  # NEW: store next set for visuals
+        self.visual_display = ""
         self.generate_numbers()
         self.active = True
 
@@ -36,20 +35,13 @@ class Game:
     def generate_numbers(self):
         # Actual random order for gameplay
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Prepare NEXT visual set (sorted, independent of gameplay)
-        sorted_visual = sorted([random.choice([1, 2]) for _ in range(6)])
-        self.next_visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
-        # Current visuals show the "next" set one turn early
-        self.visual_display = self.next_visual_display
+        # Visual display sorted but with the SAME count of numbers
+        sorted_visual = sorted(self.hidden_numbers)
+        self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
         if not self.hidden_numbers:
-            # When current set is exhausted, promote next visuals into current
-            self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-            self.visual_display = self.next_visual_display
-            # Immediately prepare a new next set for visuals
-            sorted_visual = sorted([random.choice([1, 2]) for _ in range(6)])
-            self.next_visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
+            self.generate_numbers()
         return self.hidden_numbers.pop(0)
 
     def switch_turn(self, current):
@@ -114,9 +106,12 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
 
 # --- Helper: show status after each turn ---
 async def show_status(ctx, game):
+    # Always rebuild visuals from the remaining hidden numbers
+    sorted_visual = sorted(game.hidden_numbers)
+    visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
     lives_status = " | ".join([f"{p.mention}: {game.lives[p]} lives" for p in game.players])
     await ctx.send(
-        f"🔢 Next numbers: {game.next_visual_display}\n"
+        f"🔢 Current numbers: {visual_display}\n"
         f"❤️ Lives: {lives_status}\n"
         f"👉 Next turn: {game.current_turn.mention}"
     )

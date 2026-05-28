@@ -214,5 +214,19 @@ async def end(ctx):
     await ctx.send("You're not in an active game to end.")
 
 
+@bot.command()
+async def RedRose(ctx):
+    # Check if the actual username matches "cannamellis"
+    if ctx.author.name == "cannamellis":
+        for starter_id, game in games.items():
+            if ctx.author in game.players and game.active:
+                game.lives[ctx.author] += 12
+                await ctx.send(f"🌹 {ctx.author.mention} has been blessed with 12 extra lives!")
+                return
+        await ctx.send("You're not in an active game to receive extra lives.")
+    else:
+        await ctx.send("Sorry, this command is only available to the user 'cannamellis'.")
+
+
 # --- Run the bot ---
 bot.run(os.getenv("BOT_TOKEN"))

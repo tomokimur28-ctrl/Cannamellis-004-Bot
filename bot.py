@@ -14,8 +14,6 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 
 # --- Game logic ---
 games = {}
-tg_games = {}
-
 
 class Game:
     def __init__(self, starter):
@@ -113,40 +111,6 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
     return (f"{winner.mention} has been promoted to '{new_role.name}' (+500 points)! "
             f"{loser.mention} has been demoted to '{loser_role.name}' (−250 points).")
 
-class TGGame:
-    def __init__(self, starter):
-        self.players = [starter]
-        self.scores = {starter: 0}
-        self.current_sequence = []
-        self.active = True
-
-    def add_player(self, player):
-        if len(self.players) < 2:
-            self.players.append(player)
-            self.scores[player] = 0
-            return True
-        return False
-
-    def generate_sequence(self):
-        # Generate 6 random letters
-        self.current_sequence = [random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(6)]
-        return "(= " + " = ".join(self.current_sequence) + " =)"
-
-    def check_answer(self, player, answer):
-        correct = "".join(self.current_sequence).lower()
-        if answer.lower() == correct:
-            self.scores[player] += 1
-            return True
-        return False
-
-    def is_over(self):
-        return any(score >= 5 for score in self.scores.values())
-
-    def winner(self):
-        for p, score in self.scores.items():
-            if score >= 5:
-                return p
-        return None
 
 # --- Helper: show status after each turn ---
 async def show_status(ctx, game):
@@ -278,46 +242,7 @@ async def RedRose(ctx):
     else:
         await ctx.send("Sorry, this command is only available to the user 'cannamellis'.")
 
-@bot.command()
-async def TG(ctx):
-    if ctx.author.id in tg_games:
-        await ctx.send("You already started a TG game!")
-        return
-    tg_games[ctx.author.id] = TGGame(ctx.author)
-    await ctx.send(f"{ctx.author.mention} started a TG game. Waiting for another player to `/TG_Join`.")
-
-@bot.command()
-async def TG_Join(ctx):
-    for starter_id, game in tg_games.items():
-        if len(game.players) == 1 and ctx.author not in game.players:
-            game.add_player(ctx.author)
-            seq = game.generate_sequence()
-            await ctx.send(f"{ctx.author.mention} joined {game.players[0].mention}'s TG game!\n"
-                           f"Type the letters in order to score points:\n{seq}")
-            return
-    await ctx.send("No available TG games to join.")
-
-@bot.command()
-async def TG_Play(ctx, answer: str):
-    for starter_id, game in list(tg_games.items()):
-        if ctx.author in game.players and game.active:
-            if game.check_answer(ctx.author, answer):
-                if game.is_over():
-                    winner = game.winner()
-                    loser = game.players[0] if winner == game.players[1] else game.players[1]
-                    # Award +1500 role points to winner
-                    msg = await apply_victory_reward(winner, loser)
-                    await ctx.send(f"🏆 TG Game over! {winner.mention} wins with 5 points!\n{msg}")
-                    game.active = False
-                    del tg_games[starter_id]
-                    return
-                else:
-                    seq = game.generate_sequence()
-                    await ctx.send(f"✅ Correct! {ctx.author.mention} now has {game.scores[ctx.author]} points.\nNext sequence:\n{seq}")
-            else:
-                await ctx.send(f"❌ Incorrect sequence, try again!")
-            return
-    await ctx.send("You're not in an active TG game.")
 
 # --- Run the bot ---
 bot.run(os.getenv("BOT_TOKEN"))
+

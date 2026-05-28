@@ -21,7 +21,6 @@ class Game:
         self.lives = {starter: 5}
         self.current_turn = starter
         self.hidden_numbers = []
-        self.next_hidden_numbers = []   # keep a second set ready
         self.visual_display = ""
         self.generate_numbers()
         self.active = True
@@ -34,26 +33,16 @@ class Game:
         return False
 
     def generate_numbers(self):
-        # Generate current gameplay set
+        # Actual random order for gameplay
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Generate next gameplay set
-        self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Visuals show NEXT set (sorted)
-        sorted_visual = sorted(self.next_hidden_numbers)
+        # Visual display sorted but with the SAME count of numbers
+        sorted_visual = sorted(self.hidden_numbers)
         self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
         if not self.hidden_numbers:
-            # Promote next set into current
-            self.hidden_numbers = self.next_hidden_numbers
-            # Generate a new next set
-            self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        number = self.hidden_numbers.pop(0)
-        # When only 1 number remains, update visuals to show the next set early
-        if len(self.hidden_numbers) == 1:
-            sorted_visual = sorted(self.next_hidden_numbers)
-            self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
-        return number
+            self.generate_numbers()
+        return self.hidden_numbers.pop(0)
 
     def switch_turn(self, current):
         self.current_turn = self.players[1] if current == self.players[0] else self.players[0]
@@ -99,9 +88,9 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
             break
 
     if loser_numeric_role:
-        new_value = max(0, int(loser_numeric_role.name) - 250)
+        new_value = max(0, int(loser_numeric_role.name) - 250)  # prevent negative
     else:
-        new_value = 0
+        new_value = 0  # if no role, loser drops to 0
 
     loser_role = discord.utils.get(guild.roles, name=str(new_value))
     if not loser_role:
@@ -117,9 +106,12 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
 
 # --- Helper: show status after each turn ---
 async def show_status(ctx, game):
+    # Always rebuild visuals from the remaining hidden numbers
+    sorted_visual = sorted(game.hidden_numbers)
+    visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
     lives_status = " | ".join([f"{p.mention}: {game.lives[p]} lives" for p in game.players])
     await ctx.send(
-        f"🔢 Current numbers: {game.visual_display}\n"
+        f"🔢 Current numbers: {visual_display}\n"
         f"❤️ Lives: {lives_status}\n"
         f"👉 Next turn: {game.current_turn.mention}"
     )
@@ -217,3 +209,5 @@ async def end(ctx):
 
 # --- Run the bot ---
 bot.run(os.getenv("BOT_TOKEN"))
+
+

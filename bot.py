@@ -21,8 +21,9 @@ class Game:
         self.lives = {starter: 5}
         self.current_turn = starter
         self.hidden_numbers = []
-        self.visual_display = ""
-        self.generate_numbers()
+        self.next_hidden_numbers = []   # NEW: store next set for gameplay
+        self.visual_display = ""        # visuals always show next set
+        self.generate_initial_sets()
         self.active = True
 
     def add_player(self, player):
@@ -32,17 +33,32 @@ class Game:
             return True
         return False
 
-    def generate_numbers(self):
-        # Actual random order for gameplay
+    def generate_initial_sets(self):
+        # Generate first gameplay set
         self.hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
-        # Visual display sorted but with the SAME count of numbers
-        sorted_visual = sorted(self.hidden_numbers)
+        # Generate second gameplay set
+        self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
+        # Visuals show the NEXT set (sorted)
+        sorted_visual = sorted(self.next_hidden_numbers)
+        self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
+
+    def generate_new_next_set(self):
+        # Generate a fresh set to replace next_hidden_numbers
+        self.next_hidden_numbers = [random.choice([1, 2]) for _ in range(6)]
+        sorted_visual = sorted(self.next_hidden_numbers)
         self.visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
 
     def reveal_number(self):
         if not self.hidden_numbers:
-            self.generate_numbers()
-        return self.hidden_numbers.pop(0)
+            # Promote next set into current
+            self.hidden_numbers = self.next_hidden_numbers
+            # Generate a new next set immediately
+            self.generate_new_next_set()
+        number = self.hidden_numbers.pop(0)
+        # If only 1 number remains, prepare next set early
+        if len(self.hidden_numbers) == 1:
+            self.generate_new_next_set()
+        return number
 
     def switch_turn(self, current):
         self.current_turn = self.players[1] if current == self.players[0] else self.players[0]
@@ -88,9 +104,9 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
             break
 
     if loser_numeric_role:
-        new_value = max(0, int(loser_numeric_role.name) - 250)  # prevent negative
+        new_value = max(0, int(loser_numeric_role.name) - 250)
     else:
-        new_value = 0  # if no role, loser drops to 0
+        new_value = 0
 
     loser_role = discord.utils.get(guild.roles, name=str(new_value))
     if not loser_role:
@@ -106,12 +122,9 @@ async def apply_victory_reward(winner: discord.Member, loser: discord.Member):
 
 # --- Helper: show status after each turn ---
 async def show_status(ctx, game):
-    # Always rebuild visuals from the remaining hidden numbers
-    sorted_visual = sorted(game.hidden_numbers)
-    visual_display = "(= " + " = ".join(str(n) for n in sorted_visual) + " =)"
     lives_status = " | ".join([f"{p.mention}: {game.lives[p]} lives" for p in game.players])
     await ctx.send(
-        f"🔢 Current numbers: {visual_display}\n"
+        f"🔢 Next numbers: {game.visual_display}\n"
         f"❤️ Lives: {lives_status}\n"
         f"👉 Next turn: {game.current_turn.mention}"
     )

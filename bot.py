@@ -24,6 +24,7 @@ class Game:
         self.visual_display = ""
         self.generate_numbers()
         self.active = True
+        self.enlighted_pizza_used = False  # track if special ability was used
 
     def add_player(self, player):
         if len(self.players) < 2:
@@ -154,12 +155,19 @@ async def take(ctx):
                 await ctx.send("It's not your turn!")
                 return
             number = game.reveal_number()
-            if number == 1:
-                game.lives[ctx.author] -= 1
-                await ctx.send(f"{ctx.author.mention} revealed a **1** and lost 1 life!")
-                game.switch_turn(ctx.author)
+
+            # Enlighted Pizza check
+            if ctx.author.name == "pizza2802" and game.enlighted_pizza_used:
+                await ctx.send(f"{ctx.author.mention} revealed a **{number}** but Enlighted Pizza keeps their turn!")
+                # Do NOT switch turn
             else:
-                await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
+                if number == 1:
+                    game.lives[ctx.author] -= 1
+                    await ctx.send(f"{ctx.author.mention} revealed a **1** and lost 1 life!")
+                    game.switch_turn(ctx.author)
+                else:
+                    await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
+
             if game.is_over():
                 winner = game.winner()
                 loser = game.players[0] if winner == game.players[1] else game.players[1]
@@ -183,12 +191,19 @@ async def give(ctx):
                 return
             opponent = game.players[1] if ctx.author == game.players[0] else game.players[0]
             number = game.reveal_number()
-            if number == 1:
-                game.lives[opponent] -= 1
-                await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
+
+            # Enlighted Pizza check
+            if ctx.author.name == "pizza2802" and game.enlighted_pizza_used:
+                await ctx.send(f"{ctx.author.mention} gave a **{number}** but Enlighted Pizza keeps their turn!")
+                # Do NOT switch turn
             else:
-                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
-            game.switch_turn(ctx.author)
+                if number == 1:
+                    game.lives[opponent] -= 1
+                    await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
+                else:
+                    await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
+                game.switch_turn(ctx.author)
+
             if game.is_over():
                 winner = game.winner()
                 loser = game.players[0] if winner == game.players[1] else game.players[1]

@@ -237,32 +237,22 @@ async def give(ctx):
                 game.lives[opponent] -= 1
                 await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
             else:
-                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe
-            game.switch_turn(ctx.author)
-
-            if game.is_over():
-                winner = game.winner()
-                loser = game.players[0] if winner == game.players[1] else game.players[1]
-                msg = await apply_victory_reward(winner, loser)
-                await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
-                game.active = False
-                del games[starter_id]
-                return
-            else:
-                await show_status(ctx, game)
+                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe)
+            await handle_turn(ctx, game, starter_id)
             return
     await ctx.send("You're not in an active game.")
 
 
 @bot.command()
 async def end(ctx):
+    # End is only allowed for normal games, not ChallengeGame
     for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             game.active = False
             del games[starter_id]
             await ctx.send(f"🛑 {ctx.author.mention} has ended the game early.")
             return
-    await ctx.send("You're not in an active game to end.")
+    await ctx.send("You're not in an active normal game to end.")
 
 
 @bot.command()

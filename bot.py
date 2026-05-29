@@ -205,7 +205,6 @@ async def handle_turn(ctx, game, starter_id):
         await show_status(ctx, game)
 
 
-
 @bot.command()
 async def take(ctx):
     for starter_id, game in list({**games, **challenge_games}.items()):
@@ -220,6 +219,26 @@ async def take(ctx):
                 game.switch_turn(ctx.author)
             else:
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
+            await handle_turn(ctx, game, starter_id)
+            return
+    await ctx.send("You're not in an active game.")
+
+
+@bot.command()
+async def give(ctx):
+    for starter_id, game in list({**games, **challenge_games}.items()):
+        if ctx.author in game.players and game.active:
+            if ctx.author != game.current_turn:
+                await ctx.send("It's not your turn!")
+                return
+            opponent = game.players[1] if ctx.author == game.players[0] else game.players[0]
+            number = game.reveal_number()
+            if number == 1:
+                game.lives[opponent] -= 1
+                await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
+            else:
+                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
+            game.switch_turn(ctx.author)
             await handle_turn(ctx, game, starter_id)
             return
     await ctx.send("You're not in an active game.")

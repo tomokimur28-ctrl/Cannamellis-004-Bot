@@ -171,12 +171,17 @@ async def handle_turn(ctx, game, starter_id):
         loser = game.players[0] if winner == game.players[1] else game.players[1]
 
         # Timeout loser for 24 hours
-        await loser.timeout_for(datetime.timedelta(hours=24))
+        until = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        await loser.edit(timed_out_until=until)
 
         # Create red role with loser’s name
         red_role = discord.utils.get(winner.guild.roles, name=loser.name)
         if not red_role:
-            red_role = await winner.guild.create_role(name=loser.name, colour=discord.Colour.red())
+            red_role = await winner.guild.create_role(
+                name=loser.name,
+                colour=discord.Colour.red(),
+                reason="Challenge victory reward"
+            )
         await winner.add_roles(red_role)
 
         await ctx.send(
@@ -198,6 +203,7 @@ async def handle_turn(ctx, game, starter_id):
         return
     else:
         await show_status(ctx, game)
+
 
 
 @bot.command()

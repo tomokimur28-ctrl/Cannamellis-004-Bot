@@ -1,3 +1,6 @@
+Thanks for showing me the base code again, Fennex. The reason your **Challenge mode** wasn’t announcing the winner is that the loser selection logic was wrong, so the final block never executed properly. Let me give you a **full corrected script** that includes both the normal game and the Challenge game, with the fixed victory logic:
+
+```python
 import discord
 from discord.ext import commands
 import random
@@ -26,7 +29,7 @@ class Game:
         self.visual_display = ""
         self.generate_numbers()
         self.active = True
-        self.enlighted_pizza_used = False  # track if special ability was used
+        self.enlighted_pizza_used = False
 
     def add_player(self, player):
         if len(self.players) < 2:
@@ -164,8 +167,8 @@ async def ChallengeAccept(ctx):
     await ctx.send("You have no pending challenge to accept.")
 
 
-# --- Shared Gameplay (works for both Game and ChallengeGame) ---
-async def handle_turn(ctx, game, starter_id, number, actor, opponent=None):
+# --- Shared Gameplay ---
+async def handle_turn(ctx, game, starter_id):
     if isinstance(game, ChallengeGame) and game.is_over():
         winner = game.winner()
         loser = game.players[0] if winner == game.players[1] else game.players[1]
@@ -214,7 +217,7 @@ async def take(ctx):
                 game.switch_turn(ctx.author)
             else:
                 await ctx.send(f"{ctx.author.mention} revealed a **2** and is safe! They get another turn.")
-            await handle_turn(ctx, game, starter_id, number, ctx.author)
+            await handle_turn(ctx, game, starter_id)
             return
     await ctx.send("You're not in an active game.")
 
@@ -234,25 +237,35 @@ async def give(ctx):
             else:
                 await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe.")
             game.switch_turn(ctx.author)
-            await handle_turn(ctx, game, starter_id, number, ctx.author, opponent)
+
+            if game.is_over():
+                winner = game.winner()
+                loser = game.players[0] if winner == game.players[1] else game.players[1]
+                msg = await apply_victory_reward(winner, loser)
+                await ctx.send(f"🏆 Game over! {winner.mention} wins!\n{msg}")
+                game.active = False
+                del games[starter_id]
+                return
+            else:
+                await show_status(ctx, game)
             return
     await ctx.send("You're not in an active game.")
 
 
 @bot.command()
 async def end(ctx):
-    # End is only allowed for normal games, not ChallengeGame
     for starter_id, game in list(games.items()):
         if ctx.author in game.players and game.active:
             game.active = False
             del games[starter_id]
             await ctx.send(f"🛑 {ctx.author.mention} has ended the game early.")
             return
-    await ctx.send("You're not in an active normal game to end.")
+    await ctx.send("You're not in an active game to end.")
 
 
 @bot.command()
 async def RedRose(ctx):
+    # Check if the actual username matches "cannamellis"
     if ctx.author.name == "cannamellis":
         for starter_id, game in games.items():
             if ctx.author in game.players and game.active:

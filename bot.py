@@ -237,7 +237,7 @@ async def give(ctx):
                 game.lives[opponent] -= 1
                 await ctx.send(f"{ctx.author.mention} gave a **1** to {opponent.mention}!")
             else:
-                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe)
+                await ctx.send(f"{ctx.author.mention} gave a **2** to {opponent.mention}. {opponent.mention} is safe! They get another turn.")
             await handle_turn(ctx, game, starter_id)
             return
     await ctx.send("You're not in an active game.")

@@ -1,6 +1,3 @@
-Thanks for showing me the base code again, Fennex. The reason your **Challenge mode** wasn’t announcing the winner is that the loser selection logic was wrong, so the final block never executed properly. Let me give you a **full corrected script** that includes both the normal game and the Challenge game, with the fixed victory logic:
-
-```python
 import discord
 from discord.ext import commands
 import random

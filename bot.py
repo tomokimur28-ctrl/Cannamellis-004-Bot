@@ -168,7 +168,7 @@ async def ChallengeAccept(ctx):
 async def handle_turn(ctx, game, starter_id, number, actor, opponent=None):
     if isinstance(game, ChallengeGame) and game.is_over():
         winner = game.winner()
-        loser = game.players[0] if winner == game.players[1] else game.players[0]
+        loser = game.players[0] if winner == game.players[1] else game.players[1]
 
         # Timeout loser for 24 hours
         await loser.timeout_for(datetime.timedelta(hours=24))

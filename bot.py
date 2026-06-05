@@ -3,9 +3,10 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 
 // ✅ Put your banned words here
 const bannedWords = [
-  "word1", // replace with your actual words
-  "word2",
-  "word3"
+  "nigger", // replace with your actual words
+  "fuck",
+  "diddy"
+  "epstein"
 ];
 
 // ✅ Regex to catch banned words inside other words, case-insensitive

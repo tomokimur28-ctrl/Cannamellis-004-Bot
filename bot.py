@@ -1,29 +1,43 @@
-const { Client, GatewayIntentBits } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+import discord
+from discord.ext import commands
+import re
 
-// ✅ Put your banned words here
-const bannedWords = [
-  "nigger", // replace with your actual words
-  "fuck",
-  "diddy"
-  "epstein"
-];
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
 
-// ✅ Regex to catch banned words inside other words, case-insensitive
-const bannedRegex = new RegExp(bannedWords.join("|"), "i");
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+# ✅ Put your banned words here
+banned_words = [
+    "nigger",  # replace with your actual words
+    "fuck",
+    "sex"
+    "daddy"
+    "diddy"
+    "epstein"
+]
 
-  // Check if message contains banned words OR non-English characters
-  if (bannedRegex.test(message.content) || /[^\u0000-\u007F]/.test(message.content)) {
-    try {
-      await message.delete();
-      await message.channel.send("*A strong gust of wind suddenly sweeps dust into your eyes; you reflexively blink it away while wondering what had happened.");
-    } catch (err) {
-      console.error("Failed to delete message:", err);
-    }
-  }
-});
+# Regex to catch banned words inside other words, case-insensitive
+banned_regex = re.compile("|".join(banned_words), re.IGNORECASE)
 
-client.login("YOUR_BOT_TOKEN");
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Check if message contains banned words OR non-English characters
+    if banned_regex.search(message.content) or re.search(r"[^\u0000-\u007F]", message.content):
+        try:
+            await message.delete()
+            await message.channel.send(
+                "*A strong gust of wind suddenly sweeps dust into your eyes; you reflexively blink it away while wondering what had happened."
+            )
+        except Exception as e:
+            print(f"Failed to delete message: {e}")
+
+    # Allow commands to still work
+    await bot.process_commands(message)
+
+bot.run("YOUR_BOT_TOKEN")
+

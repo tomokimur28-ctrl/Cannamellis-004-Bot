@@ -39,5 +39,5 @@ async def on_message(message):
     # Allow commands to still work
     await bot.process_commands(message)
 
-bot.run("BOT_TOKEN")
+bot.run("MTUwOTEyNDc5NzIzNjI1MjY5Mg.Ghtwwc.NCVdYtXc2McKoU3PgBcZLh6dgYriUROyfYzWNY")
 

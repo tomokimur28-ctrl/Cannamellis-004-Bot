@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import re
+import os
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -39,5 +40,5 @@ async def on_message(message):
     # Allow commands to still work
     await bot.process_commands(message)
 
-bot.run("MTUwOTEyNDc5NzIzNjI1MjY5Mg.Ghtwwc.NCVdYtXc2McKoU3PgBcZLh6dgYriUROyfYzWNY")
+bot.run(os.getenv("BOT_TOKEN"))
 
